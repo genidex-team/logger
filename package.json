@@ -1,6 +1,6 @@
 {
   "name": "@genidex/logger",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -11,5 +11,9 @@
   "dependencies": {
     "colors": "^1.4.0",
     "dotenv": "^16.5.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/genidex-team/logger"
   }
 }
