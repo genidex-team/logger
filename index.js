@@ -4,10 +4,11 @@ require('dotenv').config()
 
 if (process.env['DISABLE_LOGGER'] == undefined || process.env['DISABLE_LOGGER'].toLowerCase() != 'true') {
     require('./colors');
-    overrideLog();
+    __overrideLog();
+    __overridePrepareStackTrace();
 }
 
-function overrideLog() {
+function __overrideLog() {
 
     ['log', 'warn', 'error'].forEach((methodName) => {
         const originalMethod = console[methodName];
@@ -32,20 +33,30 @@ function overrideLog() {
                     }
                 }
             }
-            var fileNameLine = getFileNameLineColNum(initiator);
-            originalMethod.apply(console, [...args, '\t', fileNameLine.grey]);
+            originalMethod.apply(console, [...args, '\t', initiator.grey]);
         };
     });
 }
 
-function getFileNameLineColNum(initiator) {
-    /**
-     * example:
-     * initiator = "at getFileNameLineColNum (/www/src/helpers/logger.js:34:13)";
-     */
+function __overridePrepareStackTrace(){
+    const oldPrepareStackTrace = Error.prepareStackTrace;
 
-    var arr = initiator.match(/\/[^\)]+/g);
-    var file = arr[0] || '';
-    var relativePath = path.relative('.', file);
-    return relativePath;
+    Error.prepareStackTrace = (error, stack) => {
+        const baseDir = process.cwd();
+        const oldStackTrace = oldPrepareStackTrace(error, stack);
+        if (typeof oldStackTrace !== 'string') return oldStackTrace;
+        let rs = '';
+        for (const line of oldStackTrace.split('\n')) {
+            //ex: line = "at getFileNameLineColNum (/www/src/helpers/logger.js:34:13)";
+            const matches = line.match(/^\s+at\s+(.*)/);
+            if (matches && matches[1]) {
+                let stackTrace = matches[1];
+                stackTrace = stackTrace.replace('file://', '');
+                rs += '\n    at ' + stackTrace.replace(baseDir, '.');
+            }else{
+                rs += '\n' + line;
+            }
+        }
+        return rs;
+    };
 }
